@@ -1,6 +1,8 @@
 ﻿using System;
 using Microsoft.Data.Sqlite;
 
+
+//*********** calse dueño************
 public class Dueno
 {
     private int idDueño;
@@ -77,6 +79,8 @@ public class Dueno
     }
     }
 
+
+//******** clase vehiculo*******
 public class Vehiculo
 {
     private int idCarro;
@@ -242,7 +246,7 @@ public class Vehiculo
         IdDueño = idDueño;
     }
     }
-
+// clase gasto**********
 public class GastoFinanciero
 {
     private int idGasto;
@@ -275,6 +279,7 @@ public class GastoFinanciero
     }
 }
 
+// clase reparacion***************************
 public class Reparacion:GastoFinanciero
 {
     private string tipoReparacion;
@@ -326,14 +331,133 @@ public class Reparacion:GastoFinanciero
             else
             {
                 Console.WriteLine("La cantidad no puede ser negativa");
+                Environment.Exit(0);
             }
         }
     }
 
+    public string CantidadPiezas
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(cantidadpiezas))
+            {
+                return "0";
+            }
+            return cantidadpiezas;
+        }
+        set
+        {
+            if (int.TryParse (value, out int cantidad) && cantidad>=0)
+            {
+                cantidadpiezas = value;
+            }
+        }
+    }
 
+    public int IdCarro
+    {
+        get
+        {
+            return idCarro;
+        }
+        set { idCarro = value; }
+    }
 
+    public Reparacion (string tipoReparacion, string cantidadReaparacion, 
+        string cantidadPiezas, double costoReparacion, int idCarro): base (costoReparacion)
+    {
+        TipoReparacion=tipoReparacion;
+        CantidadReparacion=cantidadReaparacion;
+        CantidadPiezas=cantidadPiezas;
+        IdCarro = idCarro;
+    }
 
     }
+
+//******* clase gastos adicionales*********
+public class GastosAdicionales : GastoFinanciero
+{
+    private double viaticos;
+    private double instancia;
+    private double limpieza;
+    private int idVenta;
+
+    public double Viaticos
+    {
+        get
+        {
+            if (viaticos < 0)
+                return 0;
+
+            return viaticos;
+        }
+        set
+        {
+            if (value >= 0)
+                viaticos = value;
+
+        }
+    }
+
+    public double Instancia
+    {
+        get
+        {
+            if (instancia < 0)
+                return 0;
+
+            return instancia;
+        }
+        set
+        {
+            if (value >= 0)
+                instancia = value;
+            else
+            {
+                Console.WriteLine("Ingreso invalido(Minimo 3 caracteres)");
+                Environment.Exit(0);
+
+            }
+        }
+    }
+
+    public double Limpieza
+    {
+        get
+        {
+            if (limpieza < 0)
+                return 0;
+
+            return limpieza;
+        }
+        set
+        {
+            if (value >= 0)
+                limpieza = value;
+            else
+            {
+                Console.WriteLine("Ingreso invalido(Minimo 3 caracteres)");
+                Environment.Exit(0);
+
+            }
+        }
+    }
+    public int IdVenta
+    {
+        get { return idVenta; }
+        set { idVenta = value; }
+    }
+
+    public GastosAdicionales(double viaticos, double instancia, double limpieza, int idVenta, double montoGasto)
+        : base(montoGasto)
+    {
+        Viaticos = viaticos;
+        Instancia = instancia;
+        Limpieza = limpieza;
+        IdVenta = idVenta;
+    }
+}
 
 
 
