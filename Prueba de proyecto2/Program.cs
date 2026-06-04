@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Transactions;
 using Microsoft.Data.Sqlite;
@@ -261,7 +262,7 @@ public class Vehiculo
         }
     }
 
-    public Vehiculo(string tipo, string marca, string linea, string noVin, double costoInicial, string fechaIngreso, string estado, int idDueño)
+    public Vehiculo(string tipo, string marca, string linea, string noVin, double costoInicial, string fechaIngreso, string estado, int idDueno)
     {
         Tipo=tipo;
         Marca=marca;
@@ -318,8 +319,8 @@ public class GastoFinanciero
 public class Reparacion:GastoFinanciero
 {
     private string tipoReparacion="";
-    private string cantidadReparacion="0";
-    private string cantidadpiezas="0";
+    private int cantidadReparacion=0;
+    private int cantidadPiezas=0;
     private int idCarro;
 
     public string TipoReparacion
@@ -347,46 +348,27 @@ public class Reparacion:GastoFinanciero
         }
     }
 
-    public string CantidadReparacion
+    public int CantidadReparacion
     {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(cantidadReparacion))
-            {
-                return "0";
-            }
-            return cantidadReparacion;
-        }
+        get { return cantidadReparacion; }
         set
         {
-            if (int.TryParse(value, out int cantidad) && cantidad>=0)
-            {
+            if (value >= 0)
                 cantidadReparacion = value;
-            }
             else
-            {
                 Console.WriteLine("La cantidad de reparación no puede ser negativa");
-             
-            }
         }
     }
 
-    public string CantidadPiezas
+    public int CantidadPiezas
     {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(cantidadpiezas))
-            {
-                return "0";
-            }
-            return cantidadpiezas;
-        }
+        get { return cantidadPiezas; }
         set
         {
-            if (int.TryParse (value, out int cantidad) && cantidad>=0)
-            {
-                cantidadpiezas = value;
-            }
+            if (value >= 0)
+                cantidadPiezas = value;
+            else
+                Console.WriteLine("La cantidad de piezas no puede ser negativa");
         }
     }
 
@@ -407,8 +389,8 @@ public class Reparacion:GastoFinanciero
         }
     }
 
-    public Reparacion (string tipoReparacion, string cantidadReaparacion, 
-        string cantidadPiezas, double costoReparacion, int idCarro): base (costoReparacion)
+    public Reparacion (string tipoReparacion, int cantidadReaparacion, 
+        int cantidadPiezas, double costoReparacion, int idCarro): base (costoReparacion)
     {
         TipoReparacion=tipoReparacion;
         CantidadReparacion=cantidadReaparacion;
@@ -430,8 +412,6 @@ public class GastosAdicionales : GastoFinanciero
     {
         get
         {
-            if (viaticos < 0)
-                return 0;
 
             return viaticos;
         }
@@ -452,9 +432,7 @@ public class GastosAdicionales : GastoFinanciero
     {
         get
         {
-            if (instancia < 0)
-                return 0;
-
+            
             return instancia;
         }
         set
@@ -473,9 +451,6 @@ public class GastosAdicionales : GastoFinanciero
     {
         get
         {
-            if (limpieza < 0)
-                return 0;
-
             return limpieza;
         }
         set
@@ -653,14 +628,29 @@ public class VentaVehiculo
 public class BaseDatos
 {
     private string cadenaConexion = "Data Source=YankorSistema.db";
-
+    public bool ProbarConexion()
+    {
+        using (var conexion = new SqliteConnection(cadenaConexion))
+        {
+            try
+            {
+                conexion.Open();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR DE CONEXIÓN: {ex.Message}");
+                return false;
+            }
+        }
+    }
     public void InicializarBaseDatos()
     {
         using (var conexion = new SqliteConnection(cadenaConexion))
         {
             conexion.Open();
             var activarFK = conexion.CreateCommand();
-            activarFK.CommandText = "PRAGMA foreing_keys = ON;";
+            activarFK.CommandText = "PRAGMA foreign_keys = ON;";
             activarFK.ExecuteNonQuery();
 
             var cmd = conexion.CreateCommand();
@@ -1126,11 +1116,316 @@ public class BaseDatos
                 }
             }
         }
+
     }
 }
 
 
+class Program
+{
+    static void Main()
+    {
 
+        BaseDatos bd = new BaseDatos();
+        Console.WriteLine("===============================================");
+        Console.WriteLine("            SISTEMA CENTRO AUTOMOTRIZ       ");
+        Console.WriteLine("===============================================");
+        Console.WriteLine("Comprobando conexión con la base de datos...");
+
+        if (bd.ProbarConexion())
+        {
+            Console.WriteLine("CONECIÓN ESTABLECIDA CORRECTAMENTE");
+            bd.InicializarBaseDatos();
+            Console.WriteLine("Precione cualquier tecla para ingresar al menú");
+            Console.ReadKey();
+        }
+        else
+        {
+            Console.WriteLine("No se puede conectar la base de datos");
+            Console.WriteLine("Precione cualquier tecla para salir");
+            Console.ReadKey();
+            return;
+        }
+
+
+        string opcion;
+
+        do
+        {
+            Console.Clear();
+            Console.WriteLine("===============================================");
+            Console.WriteLine("                   MENÚ PRINCIPAL              ");
+            Console.WriteLine("===============================================");
+            Console.WriteLine("1. Control de Dueños (Clientes)");
+            Console.WriteLine("2. Inventario de vehiculo ");
+            Console.WriteLine("3. Bitacora de Reparacion(Taller)");
+            Console.WriteLine("4. Registro de Ventas");
+            Console.WriteLine("5. Gastos Adiocnlaes");
+            Console.WriteLine("6. SALIR");
+            Console.WriteLine("===============================================");
+
+            opcion = LeerOpcionMenu("Seleccione una opcion(1-6): ", 1, 6);
+
+            switch (opcion)
+            {
+                case "1":
+                    MenuDuenos(bd);
+                    break;
+                case "2":
+                    MenuVehiculos(bd);
+                    break;
+                case "3":
+                    MenuReparaciones(bd);
+                    break;
+                case "4":
+                    MenuVentas(bd);
+                    break;
+                case "5":
+                    MenuGastosAdicionales(bd);
+                    break;
+                case "6":
+                    Console.WriteLine("\n¡Gracias por utilizar el sistema! Saliendo...");
+                    Console.ReadKey();
+                    break;
+            }
+
+
+        }
+        while (opcion != "6"); }
+
+    // ********* sub menu contoll de dueños ////////////
+    static void MenuDuenos(BaseDatos bd)
+    {
+        string op;
+        do
+        {
+            Console.Clear();
+            Console.WriteLine("=============================================");
+            Console.WriteLine("             CONTROL DE DUEÑOS               ");
+            Console.WriteLine("=============================================");
+            Console.WriteLine("1. Registrar Nuevo Dueño");
+            Console.WriteLine("2. Mostrar Listado de Dueños");
+            Console.WriteLine("3. Modificar Datos de Dueño");
+            Console.WriteLine("4. Eliminar Dueño");
+            Console.WriteLine("5. Volver al Menú Principal");
+            Console.WriteLine("=============================================");
+
+            op = LeerOpcionMenu("Seleccione una opción (1-5): ", 1, 5);
+
+            switch (op)
+            {
+                case "1":
+                    Console.Clear();
+                    Console.WriteLine("--- REGISTRAR DUEÑO ---");
+                    string nombre = LeerCadenaObligatoria("Nombre completo: ", 3);
+                    string dpi = LeerCadenaNumericaExacta("DPI (13 dígitos numéricos): ", 13);
+                    string nit = LeerCadenaNumericaExacta("NIT (9 dígitos numéricos): ", 9);
+
+                    Dueno nuevo = new Dueno(nombre, dpi, nit);
+                    bd.InsertarDueno(nuevo);
+                    Console.ReadKey();
+                    break;
+
+                case "2":
+                    Console.Clear();
+                    Console.WriteLine("--- LISTADO DE DUEÑOS REGISTRADOS ---");
+                    bd.ListarDueno();
+                    Console.WriteLine("\nPresione cualquier tecla para regresar...");
+                    Console.ReadKey();
+                    break;
+
+                case "3":
+                    Console.Clear();
+                    bd.ListarDueno();
+                    int idMod = LeerEnteroPositivo("\nIngrese el ID del dueño que desea modificar: ");
+
+                    string nuevoNombre = LeerCadenaObligatoria("Nuevo Nombre: ", 3);
+                    string nuevoDpi = LeerCadenaNumericaExacta("Nuevo DPI: ", 13);
+                    string nuevoNit = LeerCadenaNumericaExacta("Nuevo NIT: ", 9);
+
+                    Dueno modificado = new Dueno(nuevoNombre, nuevoDpi, nuevoNit);
+                    modificado.IdDueno = idMod;
+                    bd.ModificarDueno(modificado);
+                    Console.ReadKey();
+                    break;
+
+                case "4":
+                    Console.Clear();
+                    bd.ListarDueno();
+                    int idEli = LeerEnteroPositivo("\nIngrese el ID del dueño que desea eliminar: ");
+                    bd.EliminarDueno(idEli);
+                    Console.ReadKey();
+                    break;
+
+                case "5":
+                    Console.WriteLine("\nRegresando al Menú Principal...");
+                    break;
+            }
+        } while (op != "5");
+    }
+
+    // *******************SUB-MENÚ: INVENTARIO DE VEHÍCULOS (****************
+    static void MenuVehiculos(BaseDatos bd)
+    {
+        string op;
+        do
+        {
+            Console.Clear();
+            Console.WriteLine("=============================================");
+            Console.WriteLine("           INVENTARIO DE VEHÍCULOS           ");
+            Console.WriteLine("=============================================");
+            Console.WriteLine("1. Registrar Ingreso de Vehículo");
+            Console.WriteLine("2. Ver Inventario Completo");
+            Console.WriteLine("3. Modificar Datos de Vehículo");
+            Console.WriteLine("4. Eliminar Vehículo");
+            Console.WriteLine("5. Volver al Menú Principal");
+            Console.WriteLine("=============================================");
+
+            op = LeerOpcionMenu("Seleccione una opción (1-5): ", 1, 5);
+
+            switch (op)
+            {
+                case "1":
+                    Console.Clear();
+                    Console.WriteLine("--- REGISTRAR VEHÍCULO ---");
+                    string tipo = LeerCadenaObligatoria("Tipo (Sedan, Pickup, etc.): ", 3);
+                    string marca = LeerCadenaObligatoria("Marca: ", 3);
+                    string linea = LeerCadenaObligatoria("Línea: ", 3);
+                    string vin = LeerCadenaObligatoria("No. VIN (17 caracteres): ", 17);
+                    double costo = LeerDecimalPositivo("Costo Inicial (Subasta/Compra): Q.");
+                    string fecha = LeerCadenaObligatoria("Fecha Ingreso (DD/MM/AAAA): ", 8);
+                    string estado = LeerCadenaObligatoria("Estado inicial (activo, en reparacion): ", 5);
+
+                    bd.ListarDueno();
+                    int idD = LeerEnteroPositivo("\nIngrese el ID del Dueño asociado de la lista anterior: ");
+
+                    Vehiculo nuevo = new Vehiculo(tipo, marca, linea, vin, costo, fecha, estado, idD);
+                    bd.InsertarVehiculo(nuevo);
+                    Console.ReadKey();
+                    break;
+
+                case "2":
+                    Console.Clear();
+                    Console.WriteLine("--- INVENTARIO GENERAL ---");
+                    bd.ListarVehiculos();
+                    Console.WriteLine("\nPresione cualquier tecla para regresar...");
+                    Console.ReadKey();
+                    break;
+
+                case "3":
+                    Console.Clear();
+                    bd.ListarVehiculos();
+                    int idMod = LeerEnteroPositivo("\nIngrese el ID del vehículo que desea modificar: ");
+
+                    string nTipo = LeerCadenaObligatoria("Nuevo Tipo: ", 3);
+                    string nMarca = LeerCadenaObligatoria("Nueva Marca: ", 3);
+                    string nLinea = LeerCadenaObligatoria("Nueva Línea: ", 3);
+                    string nVin = LeerCadenaObligatoria("Nuevo VIN: ", 17);
+                    double nCosto = LeerDecimalPositivo("Nuevo Costo Inicial: Q.");
+                    string nFecha = LeerCadenaObligatoria("Nueva Fecha Ingreso: ", 8);
+                    string nEstado = LeerCadenaObligatoria("Nuevo Estado: ", 5);
+
+                    Vehiculo modificado = new Vehiculo(nTipo, nMarca, nLinea, nVin, nCosto, nFecha, nEstado, 1);
+                    modificado.IdCarro = idMod;
+                    bd.ModificarVehiculo(modificado);
+                    Console.ReadKey();
+                    break;
+
+                case "4":
+                    Console.Clear();
+                    bd.ListarVehiculos();
+                    int idEli = LeerEnteroPositivo("\nIngrese el ID del vehículo que desea eliminar: ");
+                    bd.EliminarVehiculo(idEli);
+                    Console.ReadKey();
+                    break;
+
+                case "5":
+                    Console.WriteLine("\nRegresando al Menú Principal...");
+                    break;
+            }
+
+        } while (op != "5");
+    }
+
+
+    //********************* Mmetodo de validacion////////////////////
+    static string LeerOpcionMenu(string mensaje, int min, int max)
+    {
+        while (true)
+        {
+            Console.WriteLine(mensaje);
+            string entrada= (Console.ReadLine()??"").Trim();
+            if (int.TryParse (entrada, out int numero))
+            {
+                if (numero >= min && numero<=max)
+                {
+                    return entrada;
+                }
+            }
+            Console.WriteLine($"Entrada inválida. Seleccione un número del {min} al {max}.");
+            Console.WriteLine();
+
+        }
+        }
+
+    static string LeerCadenaNumericaExacta(string mensaje, int largoRequerido)
+    {
+        while (true)
+        {
+            Console.Write(mensaje);
+            string entrada = (Console.ReadLine() ?? "").Trim();
+
+            if (!string.IsNullOrWhiteSpace(entrada) && entrada.Length == largoRequerido && long.TryParse(entrada, out _))
+            {
+                return entrada;
+            }
+            Console.WriteLine($" Ingrese exactamente {largoRequerido} caracteres numéricos, sin letras ni símbolos.");
+        }
+    }
+
+    static string LeerCadenaObligatoria(string mensaje, int minimoCaracteres)
+    {
+        while (true)
+        {
+            Console.Write(mensaje);
+            string entrada = (Console.ReadLine() ?? "").Trim();
+
+            if (!string.IsNullOrWhiteSpace(entrada) && entrada.Length >= minimoCaracteres)
+            {
+                return entrada;
+            }
+            Console.WriteLine($" Campo obligatorio. Ingrese al menos {minimoCaracteres} caracteres.");
+        }
+    }
+
+    static double LeerDecimalPositivo(string mensaje)
+    {
+        while (true)
+        {
+            Console.Write(mensaje);
+            if (double.TryParse(Console.ReadLine(), out double resultado) && resultado >= 0)
+            {
+                return resultado;
+            }
+            Console.WriteLine(" Ingrese un monto numérico válido (mayor o igual a cero).");
+        }
+    }
+
+    static int LeerEnteroPositivo(string mensaje)
+    {
+        while (true)
+        {
+            Console.Write(mensaje);
+            if (int.TryParse(Console.ReadLine(), out int resultado) && resultado >= 0)
+            {
+                return resultado;
+            }
+            Console.WriteLine(" Ingrese un valor numérico entero válido.");
+        }
+    }
+
+
+}
 
 
 
